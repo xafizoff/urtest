@@ -1,0 +1,5 @@
+database dbname=urtest
+sql urtest.sql
+
+# user
+urtest
