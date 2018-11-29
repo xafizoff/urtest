@@ -7,6 +7,7 @@ signature USER = sig
     val login : { Id : id, Password : password } -> transaction bool
     val whoami : transaction (option id)
     val register : { Id : id, Password : password } -> transaction unit
+    val logout : unit -> transaction unit
 end
 
 functor MakeUser(M : sig type id
@@ -50,6 +51,8 @@ functor MakeUser(M : sig type id
                 return None
     val register r =
         dml (INSERT INTO user(Id,Password) VALUES ({[r.Id]},{[r.Password]}))
+    val logout () =
+        clearCookie c
 end
 
 structure User = MakeUser(struct
@@ -60,17 +63,18 @@ structure User = MakeUser(struct
 fun main () =
     me <- User.whoami;
     case me of
-        None => login "!Please log in"
+        None => login "Please log in"
       | Some me =>
         return <xml><body>
           <h1>Logged in as : {cdata (show me)}</h1>
+          <a link={logout()}>Logout</a>
         </body></xml>
 and login msg =
     return <xml><body>
       <form>
         <p>{[msg]}</p>
-        <textbox{#Id}/>
-        <textbox{#Password}/>
+        Username: <textbox{#Id}/><br/>
+        Password: <textbox{#Password}/><br/>
         <submit action={signin}/><a link={register()}>Register</a>
       </form>
     </body></xml>
@@ -89,3 +93,6 @@ and register () =
 and signup r =
     User.register { Id = readError r.Id, Password = readError r.Password };
     login "Now please login"
+and logout () =
+    User.logout();
+    login "Please login"
